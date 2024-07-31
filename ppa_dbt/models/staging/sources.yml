@@ -1,0 +1,10 @@
+version: 2
+
+sources:
+  - name: source_table_asnaf
+    description: "Source data for Asnaf transformation"
+    database: PPA
+    schema: airbyte_internal
+    tables:
+      - name: asnaf_transformed_raw__stream_vwlzs_asnaf
+        description: "The source table containing the initial data"

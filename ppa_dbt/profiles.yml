@@ -1,0 +1,14 @@
+ppa_dbt:
+  target: dev
+  outputs:
+    dev:
+      type: sqlserver
+      driver: "ODBC Driver 17 for SQL Server"
+      server: 10.10.1.199
+      port: 1433
+      user: noor.shuhailey
+      password: Lzs.user831
+      database: PPA
+      schema: dbo
+      trust_cert: true
+      threads: 4

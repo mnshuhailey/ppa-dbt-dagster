@@ -1,0 +1,29 @@
+[32m2024-07-31 22:40:53 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - 5dd357bb-274a-4af9-a226-dbbfb331da87 - 77488 - LOGS_CAPTURED - Started capturing logs in process (pid: 77488).
+[32m2024-07-31 22:40:53 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - 5dd357bb-274a-4af9-a226-dbbfb331da87 - 77488 - sync_ppa_asnaf - STEP_START - Started execution of step "sync_ppa_asnaf".
+[32m2024-07-31 22:40:54 +0800[0m - dagster - [34mINFO[0m - ppa_data_pipeline - 5dd357bb-274a-4af9-a226-dbbfb331da87 - sync_ppa_asnaf - Job 11 initialized for connection_id=411fbf4a-6295-47d1-9aab-41de03be0fd7.
+[32m2024-07-31 22:41:09 +0800[0m - dagster - [34mERROR[0m - [31mppa_data_pipeline - 5dd357bb-274a-4af9-a226-dbbfb331da87 - 77488 - sync_ppa_asnaf - STEP_FAILURE - Execution of step "sync_ppa_asnaf" failed.
+
+dagster._core.errors.DagsterExecutionInterruptedError
+
+Stack Trace:
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/execute_plan.py", line 282, in dagster_event_sequence_for_step
+    for step_event in check.generator(step_events):
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/execute_step.py", line 494, in core_dagster_event_sequence_for_step
+    for user_event in _step_output_error_checked_user_event_sequence(
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/execute_step.py", line 183, in _step_output_error_checked_user_event_sequence
+    for user_event in user_event_sequence:
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/execute_step.py", line 88, in _process_asset_results_to_events
+    for user_event in user_event_sequence:
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/compute.py", line 198, in execute_core_compute
+    for step_output in _yield_compute_results(step_context, inputs, compute_fn, compute_context):
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_core/execution/plan/compute.py", line 167, in _yield_compute_results
+    for event in iterate_with_context(
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_utils/__init__.py", line 473, in iterate_with_context
+    next_output = next(iterator)
+  File "/usr/local/lib/python3.10/dist-packages/dagster_airbyte/ops.py", line 100, in airbyte_sync_op
+    airbyte_output = airbyte.sync_and_poll(
+  File "/usr/local/lib/python3.10/dist-packages/dagster_airbyte/resources.py", line 633, in sync_and_poll
+    time.sleep(poll_interval or self.poll_interval)
+  File "/usr/local/lib/python3.10/dist-packages/dagster/_utils/interrupts.py", line 82, in _new_signal_handler
+    raise error_cls()
+[0m

@@ -1,0 +1,14 @@
+version: 2
+
+models:
+  - name: asnaf_transformed
+    description: "Transform data from source to target"
+    columns:
+      - name: AsnafID
+        description: "The unique identifier for Asnaf"
+      - name: AsnafName
+        description: "Name of Asnaf"
+      - name: Emel
+        description: "Email address of Asnaf"
+      - name: Age
+        description: "Age of Asnaf"

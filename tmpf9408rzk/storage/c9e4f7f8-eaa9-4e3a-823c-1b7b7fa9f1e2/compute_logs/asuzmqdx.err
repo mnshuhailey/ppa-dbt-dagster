@@ -1,0 +1,17 @@
+[32m2024-08-01 00:14:02 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - 298607 - LOGS_CAPTURED - Started capturing logs in process (pid: 298607).
+[32m2024-08-01 00:14:02 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - 298607 - dbt_run_op - STEP_START - Started execution of step "dbt_run_op".
+[32m2024-08-01 00:14:02 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Executing command: dbt --no-use-colors --log-format json run --project-dir /home/mnshuhailey/dev/ppa-dbt-dagster/ppa_dbt --profiles-dir /home/mnshuhailey/dev/ppa-dbt-dagster/ppa_dbt
+[32m2024-08-01 00:14:05 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Running with dbt=1.7.17
+[32m2024-08-01 00:14:05 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Registered adapter: sqlserver=1.7.4
+[32m2024-08-01 00:14:05 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Unable to do partial parsing because a project config has changed
+[32m2024-08-01 00:14:07 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Found 2 models, 1 source, 0 exposures, 0 metrics, 457 macros, 0 groups, 0 semantic models
+[32m2024-08-01 00:14:07 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op
+[32m2024-08-01 00:14:07 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Concurrency: 1 threads (target='dev')
+[32m2024-08-01 00:14:07 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op
+[32m2024-08-01 00:14:07 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op
+[32m2024-08-01 00:14:07 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Finished running  in 0 hours 0 minutes and 0.03 seconds (0.03s).
+[32m2024-08-01 00:14:08 +0800[0m - dagster - [34mINFO[0m - resource:dbt - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - dbt exited with return code 0
+[32m2024-08-01 00:14:08 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - 298607 - dbt_run_op - STEP_OUTPUT - Yielded output "result" of type "DbtOutput". (Type check passed).
+[32m2024-08-01 00:14:08 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - dbt_run_op - Writing file at: /home/mnshuhailey/dev/ppa-dbt-dagster/tmpf9408rzk/storage/c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2/dbt_run_op/result using PickledObjectFilesystemIOManager...
+[32m2024-08-01 00:14:08 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - 298607 - dbt_run_op - HANDLED_OUTPUT - Handled output "result" using IO manager "io_manager"
+[32m2024-08-01 00:14:08 +0800[0m - dagster - [34mDEBUG[0m - ppa_data_pipeline - c9e4f7f8-eaa9-4e3a-823c-1b7b7fa9f1e2 - 298607 - dbt_run_op - STEP_SUCCESS - Finished execution of step "dbt_run_op" in 5.84s.
