@@ -35,7 +35,7 @@ def sqlserver_db_resource(context):
         "UID=noor.shuhailey;"
         "PWD=Lzs.user831;"
         "TrustServerCertificate=yes;"
-        "Encrypt=yes;"
+        "Encrypt=no;"
     )
     connection = pyodbc.connect(conn_str)
     return connection
