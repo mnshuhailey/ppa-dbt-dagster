@@ -7,4 +7,6 @@ with source_data as (
     from {{ source('airbyte_internal', 'dbo_raw__stream_vwlzs_asnaf') }}
 )
 
-select * from source_data
+select * 
+into dbo.asnaf_transformed
+from source_data
