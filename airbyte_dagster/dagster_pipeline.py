@@ -1,8 +1,7 @@
 from dagster import job, repository, resource
 from dagster_dbt import dbt_cli_resource, dbt_run_op
 from dagster_airbyte import airbyte_resource, airbyte_sync_op
-from dagster_mssql import mssql_resource
-from dagster_postgres import postgres_db_resource 
+import pyodbc
 
 # Airbyte resource configuration
 ppa_airbyte_resource = airbyte_resource.configured(
@@ -26,15 +25,18 @@ def postgres_db_resource(context):
     }
 
 # SQL Server resource configuration
-sqlserver_db = mssql_resource.configured({
-    "server": "10.10.1.199",
-    "port": 1433,
-    "username": "noor.shuhailey",
-    "password": "Lzs.user831",
-    "database": "PPA",
-    "schema": "dbo",
-    "trust_cert": "true"
-})
+@resource
+def sqlserver_db_resource(context):
+    conn_str = (
+        "DRIVER={ODBC Driver 17 for SQL Server};"
+        "SERVER=10.10.1.199;"
+        "DATABASE=PPA;"
+        "UID=noor.shuhailey;"
+        "PWD=Lzs.user831;"
+        "Trust_Connection=yes;"
+    )
+    connection = pyodbc.connect(conn_str)
+    return connection
 
 # Airbyte sync operation
 sync_ppa_asnaf = airbyte_sync_op.configured(
@@ -48,9 +50,9 @@ dbt = dbt_cli_resource.configured({
     "profiles_dir": "/home/shuhailey/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
 })
 
-@job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt, "postgres_db": postgres_db_resource, "sqlserver_db": sqlserver_db})
+@job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt, "postgres_db": postgres_db_resource, "sqlserver_db": sqlserver_db_resource})
 def ppa_data_pipeline():
-    sync_ppa_asnaf()  # Uncomment if you want to run the Airbyte sync operation
+    #sync_ppa_asnaf()  # Uncomment if you want to run the Airbyte sync operation
     dbt_run_op()
 
 @repository
