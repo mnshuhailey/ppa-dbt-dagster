@@ -13,14 +13,14 @@ ppa_airbyte_resource = airbyte_resource.configured(
 )
 
 sync_ppa_asnaf = airbyte_sync_op.configured(
-    {"connection_id": "411fbf4a-6295-47d1-9aab-41de03be0fd7"},
+    {"connection_id": "0ea080d7-e172-4a82-8ae5-ecb691b9ec86"},
     name="sync_ppa_asnaf"
 )
 
 # dbt resource configuration
 dbt = dbt_cli_resource.configured({
-    "project_dir": "/home/mnshuhailey/dev/ppa-dbt-dagster/ppa_dbt",
-    "profiles_dir": "/home/mnshuhailey/dev/ppa-dbt-dagster/ppa_dbt",
+    "project_dir": "/home/mnshuhailey/dev/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
+    "profiles_dir": "/home/mnshuhailey/dev/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
 })
 
 @job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt})

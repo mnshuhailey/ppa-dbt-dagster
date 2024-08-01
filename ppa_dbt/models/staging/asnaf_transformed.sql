@@ -1,18 +1,19 @@
-{{ config(
-    materialized='ephemeral'
-) }}
-
-with source_data as (
-  SELECT * FROM {{ source('source_table_asnaf', 'asnaf_transformed_raw__stream_vwlzs_asnaf') }}
+with raw_data as (
+    select
+        id,
+        _airbyte_data::jsonb as json_data
+    from
+        {{ source('airbyte_internal', 'dbo_raw__stream_vwlzs_asnaf') }}
+),
+transformed_data as (
+    select
+        id,
+        json_data->>'vwlzs_asnafId' as AsnafID,
+        json_data->>'vwlzs_AsnafRegistrationIdName' as AsnafName,
+        json_data->>'vwlzs_Email' as Emel
+        json_data->>'vwlzs_Age' as Age
+    from
+        raw_data
 )
+select * from transformed_data
 
-flattened_json_data AS (
-  SELECT
-    JSON_VALUE(_airbyte_data, '$.vwlzs_asnafId') AS AsnafID,
-    JSON_VALUE(_airbyte_data, '$.vwlzs_AsnafRegistrationIdName') AS AsnafName,
-    JSON_VALUE(_airbyte_data, '$.vwlzs_Email') AS Emel,
-    JSON_VALUE(_airbyte_data, '$.vwlzs_Age') AS Age
-  FROM source_data
-)
-
-SELECT * FROM flattened_json_data

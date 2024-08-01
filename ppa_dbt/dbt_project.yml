@@ -4,6 +4,7 @@
 # name or the intended use of these models
 name: 'ppa_dbt'
 version: '1.0.0'
+config-version: 2
 
 # This setting configures which "profile" dbt uses for this project.
 profile: 'ppa_dbt'
@@ -18,9 +19,10 @@ seed-paths: ["seeds"]
 macro-paths: ["macros"]
 snapshot-paths: ["snapshots"]
 
-clean-targets:         # directories to be removed by `dbt clean`
+target-path: "target"
+clean-targets:
   - "target"
-  - "dbt_packages"
+  - "dbt_modules"
 
 
 # Configuring models
