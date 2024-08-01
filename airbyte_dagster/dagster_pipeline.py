@@ -56,49 +56,6 @@ dbt = dbt_cli_resource.configured({
     "profiles_dir": "/home/shuhailey/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
 })
 
-# Custom asset to read data from PostgreSQL
-@asset
-def read_postgres_data(context):
-    postgres_conn = context.resources.postgres_db
-    cursor = postgres_conn.cursor()
-    cursor.execute("""
-        SELECT
-            (_airbyte_data->>'vwlzs_asnafId')::text as AsnafID,
-            (_airbyte_data->>'vwlzs_AsnafRegistrationIdName')::text as AsnafName,
-            (_airbyte_data->>'vwlzs_Email')::text as Emel,
-            (_airbyte_data->>'vwlzs_Age')::int as Age
-        FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
-        LIMIT 10
-    """)
-    rows = cursor.fetchall()
-    cursor.close()
-    return rows
-
-# Custom asset to write data to SQL Server
-@asset
-def write_to_sqlserver(context, data):
-    sqlserver_conn = context.resources.sqlserver_db
-    cursor = sqlserver_conn.cursor()
-
-    merge_query = """
-    MERGE INTO dbo.asnaf_transformed AS target
-    USING (VALUES (?, ?, ?, ?)) AS source (AsnafID, AsnafName, Emel, Age)
-    ON target.AsnafID = source.AsnafID
-    WHEN MATCHED THEN
-        UPDATE SET
-            target.AsnafName = source.AsnafName,
-            target.Emel = source.Emel,
-            target.Age = source.Age
-    WHEN NOT MATCHED THEN
-        INSERT (AsnafID, AsnafName, Emel, Age)
-        VALUES (source.AsnafID, source.AsnafName, source.Emel, source.Age);
-    """
-    for row in data:
-        cursor.execute(merge_query, row)
-
-    sqlserver_conn.commit()
-    cursor.close()
-
 # Custom op to create the table if it doesn't exist
 @op(required_resource_keys={"sqlserver_db"})
 def create_table_if_not_exists(context):
@@ -121,12 +78,62 @@ def create_table_if_not_exists(context):
 # Custom op to transfer data from PostgreSQL to SQL Server
 @op(required_resource_keys={"postgres_db", "sqlserver_db"})
 def transfer_data_to_sqlserver(context):
-    data = read_postgres_data(context)
-    write_to_sqlserver(context, data)
+    postgres_conn = context.resources.postgres_db
+    sqlserver_conn = context.resources.sqlserver_db
+    cursor_pg = postgres_conn.cursor()
+    cursor_sql = sqlserver_conn.cursor()
+
+    # Log to indicate the start of data reading
+    context.log.info("Reading data from PostgreSQL with a LIMIT 10")
+
+    # Read data from PostgreSQL with a LIMIT 10
+    cursor_pg.execute("""
+        SELECT
+            (_airbyte_data->>'vwlzs_asnafId')::text as AsnafID,
+            (_airbyte_data->>'vwlzs_AsnafRegistrationIdName')::text as AsnafName,
+            (_airbyte_data->>'vwlzs_Email')::text as Emel,
+            (_airbyte_data->>'vwlzs_Age')::int as Age
+        FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
+        LIMIT 10
+    """)
+    rows = cursor_pg.fetchall()
+
+    if not rows:
+        context.log.warning("No data fetched from PostgreSQL.")
+    else:
+        context.log.info(f"Fetched {len(rows)} rows from PostgreSQL.")
+
+    # Log to indicate the start of data insertion
+    context.log.info("Inserting data into SQL Server")
+
+    # Insert/Update data into SQL Server
+    merge_query = """
+    MERGE INTO dbo.asnaf_transformed AS target
+    USING (VALUES (?, ?, ?, ?)) AS source (AsnafID, AsnafName, Emel, Age)
+    ON target.AsnafID = source.AsnafID
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.AsnafName = source.AsnafName,
+            target.Emel = source.Emel,
+            target.Age = source.Age
+    WHEN NOT MATCHED THEN
+        INSERT (AsnafID, AsnafName, Emel, Age)
+        VALUES (source.AsnafID, source.AsnafName, source.Emel, source.Age);
+    """
+    for row in rows:
+        cursor_sql.execute(merge_query, row)
+
+    sqlserver_conn.commit()
+    cursor_pg.close()
+    cursor_sql.close()
+
+    # Log to indicate the end of the operation
+    context.log.info("Data transfer to SQL Server completed successfully")
 
 # Job definition
 @job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt, "postgres_db": postgres_db_resource, "sqlserver_db": sqlserver_db_resource})
 def ppa_data_pipeline():
+    # sync_ppa_asnaf() # disable for teting transformed data purpose
     create_table_if_not_exists()
     transfer_data_to_sqlserver()
     dbt_run_op()
