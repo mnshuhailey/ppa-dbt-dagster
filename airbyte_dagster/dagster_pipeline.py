@@ -4,17 +4,8 @@ from dagster_airbyte import airbyte_resource, airbyte_sync_op
 import pyodbc
 import psycopg2
 
-# Airbyte resource configuration
-ppa_airbyte_resource = airbyte_resource.configured(
-    {
-        "host": "192.168.10.176",
-        "port": "8000",
-        "username": "airbyte",
-        "password": "password"
-    }
-)
+# --- Resource Definitions ---
 
-# PostgreSQL resource configuration
 @resource
 def postgres_db_resource(context):
     return psycopg2.connect(
@@ -25,7 +16,6 @@ def postgres_db_resource(context):
         database="postgres_db",
     )
 
-# SQL Server resource configuration
 @resource
 def sqlserver_db_resource(context):
     conn_str = (
@@ -43,19 +33,24 @@ def sqlserver_db_resource(context):
         context.log.error(f"SQL Server connection failed: {ex}")
         raise
 
-# Airbyte sync operation
-sync_ppa_asnaf = airbyte_sync_op.configured(
-    {"connection_id": "0ea080d7-e172-4a82-8ae5-ecb691b9ec86"},
-    name="sync_ppa_asnaf"
+# Airbyte Resource Configuration
+ppa_airbyte_resource = airbyte_resource.configured(
+    {
+        "host": "192.168.10.176",
+        "port": "8000",
+        "username": "airbyte",
+        "password": "password"
+    }
 )
 
-# dbt resource configuration
+# dbt Resource Configuration
 dbt = dbt_cli_resource.configured({
     "project_dir": "/home/shuhailey/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
     "profiles_dir": "/home/shuhailey/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
 })
 
-# Custom op to create the table if it doesn't exist
+# --- Operations ---
+
 @op(required_resource_keys={"sqlserver_db"})
 def create_table_if_not_exists(context):
     sqlserver_conn = context.resources.sqlserver_db
@@ -64,7 +59,7 @@ def create_table_if_not_exists(context):
     create_table_query = """
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='asnaf_transformed' AND xtype='U')
     CREATE TABLE dbo.asnaf_transformed (
-        AsnafID VARCHAR(500),
+        AsnafID VARCHAR(500) PRIMARY KEY,
         AsnafName VARCHAR(500),
         Emel VARCHAR(500),
         Age INT
@@ -74,7 +69,6 @@ def create_table_if_not_exists(context):
     sqlserver_conn.commit()
     cursor.close()
 
-# Custom op to transfer data from PostgreSQL to SQL Server
 @op(required_resource_keys={"postgres_db", "sqlserver_db"})
 def transfer_data_to_sqlserver(context):
     postgres_conn = context.resources.postgres_db
@@ -103,21 +97,35 @@ def transfer_data_to_sqlserver(context):
         context.log.info(f"Fetched {len(rows)} rows from PostgreSQL.")
 
     # Log to indicate the start of data insertion
-    context.log.info("Inserting data into SQL Server")
+    context.log.info("Upserting data into SQL Server")
 
-    # Insert data into SQL Server
+    # Define the MERGE statement to handle upsert (update or insert)
+    merge_query = """
+    MERGE INTO dbo.asnaf_transformed AS target
+    USING (VALUES (?, ?, ?, ?)) AS source (AsnafID, AsnafName, Emel, Age)
+    ON target.AsnafID = source.AsnafID
+    WHEN MATCHED THEN
+        UPDATE SET
+            target.AsnafName = source.AsnafName,
+            target.Emel = source.Emel,
+            target.Age = source.Age
+    WHEN NOT MATCHED THEN
+        INSERT (AsnafID, AsnafName, Emel, Age)
+        VALUES (source.AsnafID, source.AsnafName, source.Emel, source.Age);
+    """
+
+    # Execute the MERGE statement for each row
     for row in rows:
-        cursor_sql.execute("""
-            INSERT INTO dbo.asnaf_transformed (AsnafID, AsnafName, Emel, Age)
-            VALUES (?, ?, ?, ?)
-        """, row)
+        cursor_sql.execute(merge_query, row)
 
     sqlserver_conn.commit()
     cursor_pg.close()
     cursor_sql.close()
 
     # Log to indicate the end of the operation
-    context.log.info("Data transfer to SQL Server completed successfully")
+    context.log.info("Data upsert to SQL Server completed successfully")
+
+# --- Jobs and Repository ---
 
 @job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt, "postgres_db": postgres_db_resource, "sqlserver_db": sqlserver_db_resource})
 def ppa_data_pipeline():
