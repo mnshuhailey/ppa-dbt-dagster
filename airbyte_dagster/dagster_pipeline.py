@@ -34,7 +34,8 @@ def sqlserver_db_resource(context):
         "DATABASE=PPA;"
         "UID=noor.shuhailey;"
         "PWD=Lzs.user831;"
-        "Trust_Connection=yes;"
+        "TrustServerCertificate=yes;"
+        "Encrypt=yes;"
     )
     connection = pyodbc.connect(conn_str)
     return connection
@@ -83,7 +84,7 @@ def transfer_data_to_sqlserver(context):
 
 @job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt, "postgres_db": postgres_db_resource, "sqlserver_db": sqlserver_db_resource})
 def ppa_data_pipeline():
-    #sync_ppa_asnaf()  # Uncomment if you want to run the Airbyte sync operation
+    #sync_ppa_asnaf()
     dbt_run_op()
     transfer_data_to_sqlserver()
 
