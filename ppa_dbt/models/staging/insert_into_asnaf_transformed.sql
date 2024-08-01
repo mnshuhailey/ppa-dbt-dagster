@@ -1,4 +1,4 @@
-insert into {{ target('dbo', 'asnaf_transformed') }} (AsnafID, AsnafName, Emel, Age)
+insert into {{ target('airbyte_internal', 'asnaf_transformed') }} (AsnafID, AsnafName, Emel, Age)
 select
   AsnafID,
   AsnafName,

@@ -1,5 +1,5 @@
 ppa_dbt:
-  target: dev
+  target: dev_postgres
   outputs:
     dev_postgres:
       type: postgres
