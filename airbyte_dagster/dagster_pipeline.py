@@ -34,6 +34,7 @@ sqlserver_db = mssql_resource.configured({
     "trust_cert": "true"
 })
 
+# Airbyte sync operation
 sync_ppa_asnaf = airbyte_sync_op.configured(
     {"connection_id": "0ea080d7-e172-4a82-8ae5-ecb691b9ec86"},
     name="sync_ppa_asnaf"
@@ -47,7 +48,7 @@ dbt = dbt_cli_resource.configured({
 
 @job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt, "postgres_db": postgres_db, "sqlserver_db": sqlserver_db})
 def ppa_data_pipeline():
-    #sync_ppa_asnaf()
+    #sync_ppa_asnaf() 
     dbt_run_op()
 
 @repository
