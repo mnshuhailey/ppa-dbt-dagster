@@ -19,8 +19,8 @@ sync_ppa_asnaf = airbyte_sync_op.configured(
 
 # dbt resource configuration
 dbt = dbt_cli_resource.configured({
-    "project_dir": "/home/mnshuhailey/dev/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
-    "profiles_dir": "/home/mnshuhailey/dev/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
+    "project_dir": "/home/shuhailey/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
+    "profiles_dir": "/home/shuhailey/lzs-ppa/ppa-dbt-dagster/ppa_dbt",
 })
 
 @job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt})
