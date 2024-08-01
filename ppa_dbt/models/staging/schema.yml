@@ -1,5 +1,11 @@
 version: 2
 
+sources:
+  - name: airbyte_internal
+    schema: airbyte_internal
+    tables:
+      - name: dbo_raw__stream_vwlzs_asnaf
+
 models:
   - name: transform_airbyte_data
     description: "Transform Airbyte JSON data into structured format"
