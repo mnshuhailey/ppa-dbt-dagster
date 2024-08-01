@@ -1,7 +1,15 @@
 ppa_dbt:
-  target: dev
+  target: dev_postgres
   outputs:
-    dev:
+    dev_postgres:
+      type: postgres
+      host: 192.168.10.177
+      user: postgres
+      pass: secret123
+      port: 5432
+      dbname: postgres_db
+      schema: airbyte_internal
+    dev_sqlserver:
       type: sqlserver
       driver: "ODBC Driver 17 for SQL Server"
       server: 10.10.1.199

@@ -1,14 +1,20 @@
 version: 2
 
+sources:
+  - name: airbyte_internal
+    schema: airbyte_internal
+    tables:
+      - name: dbo_raw__stream_vwlzs_asnaf
+
 models:
-  - name: asnaf_transformed
-    description: "Transform data from source to target"
+  - name: transform_airbyte_data
+    description: "Transform Airbyte JSON data into structured format"
     columns:
       - name: AsnafID
-        description: "The unique identifier for Asnaf"
+        description: "Asnaf ID"
       - name: AsnafName
-        description: "Name of Asnaf"
+        description: "Asnaf Name"
       - name: Emel
-        description: "Email address of Asnaf"
+        description: "Email"
       - name: Age
-        description: "Age of Asnaf"
+        description: "Age"
