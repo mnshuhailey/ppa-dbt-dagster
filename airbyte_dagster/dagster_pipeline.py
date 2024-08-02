@@ -106,11 +106,11 @@ def transfer_data_to_sqlserver(context):
     cursor_sql = sqlserver_conn.cursor()
 
     try:
-        # Fetch data from PostgreSQL with LIMIT 10
+        # Fetch data from PostgreSQL with LIMIT 1000
         cursor_pg.execute("""
             SELECT _airbyte_data::text
             FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
-            LIMIT 10
+            LIMIT 1000
         """)
         rows = cursor_pg.fetchall()
 
