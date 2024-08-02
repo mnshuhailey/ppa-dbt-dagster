@@ -66,7 +66,7 @@ def create_table_if_not_exists(context):
 
     # Fetch sample data to determine JSON keys
     cursor_pg.execute("""
-        SELECT _airbyte_data
+        SELECT _airbyte_data::text
         FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
         LIMIT 1
     """)
@@ -75,8 +75,8 @@ def create_table_if_not_exists(context):
         context.log.error("No sample data available to determine JSON keys.")
         return
 
-    json_data = sample_data[0]
-    keys = json.loads(json_data).keys()
+    json_data = json.loads(sample_data[0])
+    keys = json_data.keys()
     
     # Construct the CREATE TABLE statement
     columns = ", ".join([f"{key} VARCHAR(500)" for key in keys])
@@ -106,10 +106,11 @@ def transfer_data_to_sqlserver(context):
     cursor_sql = sqlserver_conn.cursor()
 
     try:
-        # Fetch data from PostgreSQL
+        # Fetch data from PostgreSQL with LIMIT 10
         cursor_pg.execute("""
-            SELECT _airbyte_data
+            SELECT _airbyte_data::text
             FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
+            LIMIT 10
         """)
         rows = cursor_pg.fetchall()
 
