@@ -79,7 +79,7 @@ def create_table_if_not_exists(context):
     keys = json_data.keys()
     
     # Construct the CREATE TABLE statement
-    columns = ", ".join([f"{key} VARCHAR(500)" for key in keys])
+    columns = ", ".join([f"{key} VARCHAR(MAX)" for key in keys])
     create_table_query = f"""
     IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='original_asnaf' AND xtype='U')
     CREATE TABLE dbo.original_asnaf (
