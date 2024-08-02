@@ -1,9 +1,9 @@
-# dagster_pipeline.py
-from dagster import job, op, repository, resource, asset
+from dagster import job, op, repository, resource
 from dagster_dbt import dbt_cli_resource, dbt_run_op
 from dagster_airbyte import airbyte_resource, airbyte_sync_op
 import pyodbc
 import psycopg2
+import json
 
 # Airbyte resource configuration
 ppa_airbyte_resource = airbyte_resource.configured(
@@ -57,23 +57,45 @@ dbt = dbt_cli_resource.configured({
 })
 
 # Custom op to create the table if it doesn't exist
-@op(required_resource_keys={"sqlserver_db"})
+@op(required_resource_keys={"postgres_db", "sqlserver_db"})
 def create_table_if_not_exists(context):
+    postgres_conn = context.resources.postgres_db
     sqlserver_conn = context.resources.sqlserver_db
-    cursor = sqlserver_conn.cursor()
+    cursor_pg = postgres_conn.cursor()
+    cursor_sql = sqlserver_conn.cursor()
 
-    create_table_query = """
-    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='asnaf_transformed' AND xtype='U')
-    CREATE TABLE dbo.asnaf_transformed (
-        AsnafID VARCHAR(500) PRIMARY KEY,
-        AsnafName VARCHAR(500),
-        Emel VARCHAR(500),
-        Age INT
+    # Fetch sample data to determine JSON keys
+    cursor_pg.execute("""
+        SELECT _airbyte_data
+        FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
+        LIMIT 1
+    """)
+    sample_data = cursor_pg.fetchone()
+    if not sample_data:
+        context.log.error("No sample data available to determine JSON keys.")
+        return
+
+    json_data = sample_data[0]
+    keys = json.loads(json_data).keys()
+    
+    # Construct the CREATE TABLE statement
+    columns = ", ".join([f"{key} VARCHAR(500)" for key in keys])
+    create_table_query = f"""
+    IF NOT EXISTS (SELECT * FROM sysobjects WHERE name='original_asnaf' AND xtype='U')
+    CREATE TABLE dbo.original_asnaf (
+        {columns}
     );
     """
-    cursor.execute(create_table_query)
-    sqlserver_conn.commit()
-    cursor.close()
+    try:
+        cursor_sql.execute(create_table_query)
+        sqlserver_conn.commit()
+        context.log.info("Table original_asnaf created successfully.")
+    except Exception as e:
+        context.log.error(f"Failed to create table: {e}")
+        raise
+    finally:
+        cursor_pg.close()
+        cursor_sql.close()
 
 # Custom op to transfer data from PostgreSQL to SQL Server
 @op(required_resource_keys={"postgres_db", "sqlserver_db"})
@@ -83,57 +105,45 @@ def transfer_data_to_sqlserver(context):
     cursor_pg = postgres_conn.cursor()
     cursor_sql = sqlserver_conn.cursor()
 
-    # Log to indicate the start of data reading
-    context.log.info("Reading data from PostgreSQL with a LIMIT 10")
+    try:
+        # Fetch data from PostgreSQL
+        cursor_pg.execute("""
+            SELECT _airbyte_data
+            FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
+        """)
+        rows = cursor_pg.fetchall()
 
-    # Read data from PostgreSQL with a LIMIT 10
-    cursor_pg.execute("""
-        SELECT
-            (_airbyte_data->>'vwlzs_asnafId')::text as AsnafID,
-            (_airbyte_data->>'vwlzs_AsnafRegistrationIdName')::text as AsnafName,
-            (_airbyte_data->>'vwlzs_Email')::text as Emel,
-            (_airbyte_data->>'vwlzs_Age')::int as Age
-        FROM airbyte_internal.dbo_raw__stream_vwlzs_asnaf
-        LIMIT 10
-    """)
-    rows = cursor_pg.fetchall()
+        if not rows:
+            context.log.warning("No data fetched from PostgreSQL.")
+        else:
+            context.log.info(f"Fetched {len(rows)} rows from PostgreSQL.")
 
-    if not rows:
-        context.log.warning("No data fetched from PostgreSQL.")
-    else:
-        context.log.info(f"Fetched {len(rows)} rows from PostgreSQL.")
+        # Insert data into SQL Server
+        for row in rows:
+            json_data = json.loads(row[0])
+            columns = ", ".join(json_data.keys())
+            placeholders = ", ".join(["?"] * len(json_data))
+            values = tuple(json_data.values())
+            
+            insert_query = f"""
+            INSERT INTO dbo.original_asnaf ({columns})
+            VALUES ({placeholders})
+            """
+            cursor_sql.execute(insert_query, values)
 
-    # Log to indicate the start of data insertion
-    context.log.info("Inserting data into SQL Server")
-
-    # Insert/Update data into SQL Server
-    merge_query = """
-    MERGE INTO dbo.asnaf_transformed AS target
-    USING (VALUES (?, ?, ?, ?)) AS source (AsnafID, AsnafName, Emel, Age)
-    ON target.AsnafID = source.AsnafID
-    WHEN MATCHED THEN
-        UPDATE SET
-            target.AsnafName = source.AsnafName,
-            target.Emel = source.Emel,
-            target.Age = source.Age
-    WHEN NOT MATCHED THEN
-        INSERT (AsnafID, AsnafName, Emel, Age)
-        VALUES (source.AsnafID, source.AsnafName, source.Emel, source.Age);
-    """
-    for row in rows:
-        cursor_sql.execute(merge_query, row)
-
-    sqlserver_conn.commit()
-    cursor_pg.close()
-    cursor_sql.close()
-
-    # Log to indicate the end of the operation
-    context.log.info("Data transfer to SQL Server completed successfully")
+        sqlserver_conn.commit()
+        context.log.info("Data transfer to SQL Server completed successfully")
+    except Exception as e:
+        context.log.error(f"Data transfer failed: {e}")
+        raise
+    finally:
+        cursor_pg.close()
+        cursor_sql.close()
 
 # Job definition
 @job(resource_defs={"airbyte": ppa_airbyte_resource, "dbt": dbt, "postgres_db": postgres_db_resource, "sqlserver_db": sqlserver_db_resource})
 def ppa_data_pipeline():
-    # sync_ppa_asnaf() # disable for teting transformed data purpose
+    # sync_ppa_asnaf() # disable for testing transformed data purpose
     create_table_if_not_exists()
     transfer_data_to_sqlserver()
     dbt_run_op()
